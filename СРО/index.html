@@ -1,0 +1,296 @@
+```html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сравнение тарифов Казахстана</title>
+<style>
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #172033;
+}
+header {
+    background: #172554;
+    color: white;
+    padding: 25px 7%;
+}
+header h1 { margin: 0 0 8px; }
+header p { margin: 0; color: #cbd5e1; }
+main { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+.filters, .compare-box {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 22px;
+    box-shadow: 0 3px 12px #0000000a;
+}
+.filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 15px;
+}
+label { display: block; font-weight: bold; margin-bottom: 7px; }
+input, select, button {
+    width: 100%;
+    padding: 11px;
+    border-radius: 7px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+}
+button {
+    border: none;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+button:hover { background: #1d4ed8; }
+.reset { background: #64748b; }
+.catalog {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border-top: 4px solid #2563eb;
+    box-shadow: 0 3px 12px #0000000a;
+}
+.card h3 { margin-top: 0; }
+.operator { color: #64748b; font-size: 14px; }
+.price { font-size: 25px; font-weight: bold; margin: 15px 0; }
+.details { line-height: 1.9; }
+.card button { margin-top: 12px; }
+.compare-box { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 450px; }
+th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+th { background: #eff6ff; }
+#message { margin: 15px 0; color: #b91c1c; }
+footer { text-align: center; padding: 25px; color: #64748b; }
+@media(max-width: 500px) {
+    header { padding: 22px 20px; }
+    main { padding: 0 12px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Сравнение мобильных тарифов</h1>
+    <p>Найди подходящий тариф по цене, интернету и минутам</p>
+</header>
+
+<main>
+    <section class="filters">
+        <div>
+            <label for="operator">Оператор</label>
+            <select id="operator">
+                <option value="">Все операторы</option>
+                <option>Beeline</option>
+                <option>Kcell</option>
+                <option>activ</option>
+                <option>Tele2</option>
+                <option>Altel</option>
+            </select>
+        </div>
+        <div>
+            <label for="maxPrice">Максимальная цена (₸)</label>
+            <input id="maxPrice" type="number" min="0" placeholder="Например, 6000">
+        </div>
+        <div>
+            <label for="minInternet">Интернет от (ГБ)</label>
+            <input id="minInternet" type="number" min="0" placeholder="Например, 20">
+        </div>
+        <div>
+            <label for="minMinutes">Минут от</label>
+            <input id="minMinutes" type="number" min="0" placeholder="Например, 100">
+        </div>
+        <div>
+            <label for="sort">Сортировка</label>
+            <select id="sort">
+                <option value="price">Сначала дешёвые</option>
+                <option value="priceDesc">Сначала дорогие</option>
+                <option value="internet">Больше интернета</option>
+                <option value="minutes">Больше минут</option>
+            </select>
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <button onclick="applyFilters()">Найти тарифы</button>
+        </div>
+        <div>
+            <label>&nbsp;</label>
+            <button class="reset" onclick="resetFilters()">Сбросить фильтры</button>
+        </div>
+    </section>
+
+    <p id="message"></p>
+    <h2>Каталог тарифов</h2>
+    <section class="catalog" id="catalog"></section>
+
+    <section class="compare-box">
+        <h2>Сравнение тарифов</h2>
+        <p>Выбери два или более тарифов с помощью кнопок в каталоге.</p>
+        <div id="comparison">Тарифы для сравнения не выбраны.</div>
+        <button class="reset" onclick="clearComparison()" style="margin-top:15px;max-width:220px">
+            Очистить сравнение
+        </button>
+    </section>
+</main>
+
+<footer>Учебный проект СРО №17 | Мухаметов Дияр | ИС 25-22</footer>
+
+<script>
+const tariffs = [
+    {id:1, name:"Супер", operator:"Beeline", price:3990, internet:15, minutes:100, sms:50},
+    {id:2, name:"Жарқын", operator:"Kcell", price:4990, internet:25, minutes:150, sms:50},
+    {id:3, name:"Комфорт", operator:"activ", price:2990, internet:10, minutes:100, sms:30},
+    {id:4, name:"Безлимит", operator:"Tele2", price:5990, internet:100, minutes:200, sms:100},
+    {id:5, name:"Оптимальный", operator:"Altel", price:4490, internet:30, minutes:150, sms:50},
+    {id:6, name:"Эконом", operator:"Beeline", price:2490, internet:8, minutes:50, sms:20},
+    {id:7, name:"Максимум", operator:"Kcell", price:6990, internet:50, minutes:300, sms:100},
+    {id:8, name:"Старт", operator:"Tele2", price:3490, internet:20, minutes:100, sms:30}
+];
+
+let selected = [];
+
+function getValue(id) {
+    const raw = document.getElementById(id).value.trim();
+    if (raw === "") return null;
+    const number = Number(raw);
+    if (!Number.isFinite(number) || number < 0) return NaN;
+    return number;
+}
+
+function render(data) {
+    const catalog = document.getElementById("catalog");
+    catalog.innerHTML = "";
+
+    if (data.length === 0) {
+        catalog.innerHTML = "<p>По заданным условиям тарифы не найдены.</p>";
+        return;
+    }
+
+    data.forEach(t => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+            <div class="operator">${t.operator}</div>
+            <h3>${t.name}</h3>
+            <div class="price">${t.price.toLocaleString("ru-RU")} ₸/мес.</div>
+            <div class="details">
+                Интернет: ${t.internet} ГБ<br>
+                Минуты: ${t.minutes}<br>
+                SMS: ${t.sms}<br>
+                За год: ${(t.price * 12).toLocaleString("ru-RU")} ₸
+            </div>
+            <button onclick="toggleCompare(${t.id})">
+                ${selected.includes(t.id) ? "Убрать из сравнения" : "Сравнить"}
+            </button>
+        `;
+        catalog.appendChild(card);
+    });
+}
+
+function applyFilters() {
+    const maxPrice = getValue("maxPrice");
+    const minInternet = getValue("minInternet");
+    const minMinutes = getValue("minMinutes");
+    const message = document.getElementById("message");
+
+    if ([maxPrice, minInternet, minMinutes].some(Number.isNaN)) {
+        message.textContent = "Ошибка: вводи только неотрицательные числа.";
+        return;
+    }
+
+    message.textContent = "";
+
+    let result = tariffs.filter(t =>
+        (!document.getElementById("operator").value ||
+         t.operator === document.getElementById("operator").value) &&
+        (maxPrice === null || t.price <= maxPrice) &&
+        (minInternet === null || t.internet >= minInternet) &&
+        (minMinutes === null || t.minutes >= minMinutes)
+    );
+
+    const sort = document.getElementById("sort").value;
+    if (sort === "price") result.sort((a,b) => a.price - b.price);
+    if (sort === "priceDesc") result.sort((a,b) => b.price - a.price);
+    if (sort === "internet") result.sort((a,b) => b.internet - a.internet);
+    if (sort === "minutes") result.sort((a,b) => b.minutes - a.minutes);
+
+    render(result);
+}
+
+function resetFilters() {
+    ["operator", "maxPrice", "minInternet", "minMinutes"].forEach(id => {
+        document.getElementById(id).value = "";
+    });
+    document.getElementById("sort").value = "price";
+    document.getElementById("message").textContent = "";
+    applyFilters();
+}
+
+function toggleCompare(id) {
+    if (selected.includes(id)) {
+        selected = selected.filter(item => item !== id);
+    } else {
+        selected.push(id);
+    }
+
+    applyFilters();
+    renderComparison();
+}
+
+function renderComparison() {
+    const area = document.getElementById("comparison");
+    const items = tariffs.filter(t => selected.includes(t.id));
+
+    if (items.length === 0) {
+        area.textContent = "Тарифы для сравнения не выбраны.";
+        return;
+    }
+
+    if (items.length < 2) {
+        area.textContent = "Выбери ещё хотя бы один тариф для сравнения.";
+        return;
+    }
+
+    let html = `<table>
+        <thead><tr><th>Характеристика</th>
+        ${items.map(t => `<th>${t.operator} — ${t.name}</th>`).join("")}
+        </tr></thead><tbody>`;
+
+    const rows = [
+        ["Цена в месяц", t => t.price.toLocaleString("ru-RU") + " ₸"],
+        ["Цена за год", t => (t.price * 12).toLocaleString("ru-RU") + " ₸"],
+        ["Интернет", t => t.internet + " ГБ"],
+        ["Минуты", t => t.minutes],
+        ["SMS", t => t.sms]
+    ];
+
+    rows.forEach(([label, value]) => {
+        html += `<tr><td>${label}</td>${items.map(t => `<td>${value(t)}</td>`).join("")}</tr>`;
+    });
+
+    html += "</tbody></table>";
+    area.innerHTML = html;
+}
+
+function clearComparison() {
+    selected = [];
+    applyFilters();
+    renderComparison();
+}
+
+applyFilters();
+</script>
+</body>
+</html>
+```
